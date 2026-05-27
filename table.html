@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Votre commande</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    const SUPABASE_URL = "https://hbdgobcdfittdnifjodr.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_eJXG4Rd9ZVM5LUxQxMX1yA_QF_NjuEs";
+
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const tableNum = parseInt(params.get("table") || "1");
+      document.getElementById("table-num").textContent = tableNum;
+
+      const { data } = await db
+        .from("tables")
+        .select("status")
+        .eq("numero", tableNum)
+        .single();
+
+      if (data && data.status === "waiting") {
+        await db.from("tables").update({ status: "scanning" }).eq("numero", tableNum);
+      }
+
+      if (data) showStatus(data.status === "waiting" ? "scanning" : data.status);
+
+      db.channel("table-" + tableNum)
+        .on("postgres_changes", {
+          event: "UPDATE",
+          schema: "public",
+          table: "tables",
+          filter: `numero=eq.${tableNum}`
+        }, (payload) => {
+          showStatus(payload.new.status);
+        })
+        .subscribe();
+    }
+
+    function unlockAndWait() {
+      if (navigator.vibrate) navigator.vibrate(100);
+      document.getElementById("btn-confirm").style.display = "none";
+      document.getElementById("waiting-confirmed").style.display = "flex";
+    }
+
+    function showStatus(status) {
+      const waiting = document.getElementById("state-waiting");
+      const ready = document.getElementById("state-ready");
+      const tableLabel = document.getElementById("table-label");
+
+      if (status === "ready") {
+        waiting.classList.add("hidden");
+        ready.classList.remove("hidden");
+        tableLabel.classList.add("hidden");
+        if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
+        playChime();
+      } else {
+        waiting.classList.remove("hidden");
+        ready.classList.add("hidden");
+        tableLabel.classList.remove("hidden");
+      }
+    }
+
+    function playChime() {
+      try {
+        const ctx = new AudioContext();
+        [523, 659, 784, 1047].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = "sine";
+          gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.18);
+          gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + i * 0.18 + 0.05);
+          gain.gain.linearRampToValueAtTime(0, ctx.currentTime + i * 0.18 + 0.35);
+          osc.start(ctx.currentTime + i * 0.18);
+          osc.stop(ctx.currentTime + i * 0.18 + 0.4);
+        });
+      } catch(e) {}
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #FAF7F2;
+      --dark: #1A1208;
+      --gold: #C9973A;
+      --gold-light: #E8C06A;
+      --green: #2D6A4F;
+      --green-light: #52B788;
+    }
+    html, body {
+      height: 100%;
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,151,58,0.12) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 50% 110%, rgba(201,151,58,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .card {
+      position: relative; z-index: 1; text-align: center;
+      padding: 24px 28px;
+      width: min(420px, 92vw);
+      border: 1px solid rgba(201,151,58,0.25); border-radius: 4px;
+      background: rgba(255,255,255,0.6); backdrop-filter: blur(8px);
+      box-shadow: 0 2px 40px rgba(26,18,8,0.07);
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .logo {
+      font-family: 'Playfair Display', serif; font-size: 12px;
+      letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase;
+    }
+    #table-label {
+      display: flex; flex-direction: column; align-items: center; gap: 0;
+    }
+    #table-label .label {
+      font-size: 10px; letter-spacing: 0.2em;
+      text-transform: uppercase; color: #999; font-weight: 500;
+    }
+    #table-label .number {
+      font-family: 'Playfair Display', serif; font-size: 48px;
+      line-height: 1; color: var(--dark);
+    }
+    .divider { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+    /* ATTENTE */
+    #state-waiting { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+    #state-waiting.hidden { display: none; }
+
+    .pulse-ring {
+      width: 60px; height: 60px; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pulse-ring::before, .pulse-ring::after {
+      content: ''; position: absolute; border-radius: 50%;
+      border: 1.5px solid var(--gold); animation: ripple 2.4s ease-out infinite;
+    }
+    .pulse-ring::after { animation-delay: 1.2s; }
+    @keyframes ripple {
+      0% { width: 30px; height: 30px; opacity: 0.8; }
+      100% { width: 60px; height: 60px; opacity: 0; }
+    }
+    .pulse-inner {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1;
+    }
+    .pulse-inner svg { width: 16px; height: 16px; fill: white; }
+
+    .waiting-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--dark); }
+    .waiting-sub { font-size: 13px; color: #888; line-height: 1.5; max-width: 240px; }
+    .disconnect-msg { font-size: 12px; color: var(--gold); font-style: italic; }
+
+    #btn-confirm {
+      padding: 12px 24px;
+      background: var(--gold); color: #1A1208;
+      border: none; border-radius: 4px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; transition: background 0.2s;
+      box-shadow: 0 4px 16px rgba(201,151,58,0.3);
+      width: 100%;
+    }
+    #btn-confirm:hover { background: var(--gold-light); }
+
+    #waiting-confirmed {
+      display: none; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .dots { display: flex; gap: 6px; justify-content: center; }
+    .dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--gold-light);
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-8px); opacity: 1; }
+    }
+    .confirmed-text { font-size: 12px; color: #aaa; }
+
+    /* PRÊT */
+    #state-ready {
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #state-ready.hidden { display: none; }
+    @keyframes popIn {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .check-circle {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--green);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 12px rgba(45,106,79,0.15), 0 0 0 24px rgba(45,106,79,0.06);
+    }
+    .check-circle svg { width: 36px; height: 36px; stroke: white; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .ready-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--dark); }
+    .ready-sub { font-size: 14px; color: #666; line-height: 1.6; max-width: 260px; }
+    .ready-sub strong { color: var(--green); font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">La Tonnellerie</div>
+    <div id="table-label">
+      <span class="label">Table</span>
+      <span class="number" id="table-num">—</span>
+    </div>
+    <div class="divider"></div>
+
+    <div id="state-waiting">
+      <div class="pulse-ring">
+        <div class="pulse-inner">
+          <svg viewBox="0 0 24 24"><path d="M12 2C9.24 2 7 4.24 7 7v1H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2h-1V7c0-2.76-2.24-5-5-5zm0 2c1.66 0 3 1.34 3 3v1H9V7c0-1.66 1.34-3 3-3zm0 9c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>
+        </div>
+      </div>
+      <p class="waiting-title">Votre commande est en cours</p>
+      <p class="waiting-sub">Appuyez sur le bouton pour être alerté dès que votre commande est prête.</p>
+      <p class="disconnect-msg">Merci de ne pas vous déconnecter</p>
+      <button id="btn-confirm" onclick="unlockAndWait()">✔ Je patiente ici</button>
+      <div id="waiting-confirmed">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <p class="confirmed-text">Nous vous prévenons dès que c'est prêt…</p>
+      </div>
+    </div>
+
+    <div id="state-ready" class="hidden">
+      <div class="check-circle">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <p class="ready-title">Votre commande est prête !</p>
+      <p class="ready-sub">Rendez-vous au comptoir pour <strong>récupérer votre commande</strong>. Merci !</p>
+    </div>
+  </div>
+</body>
+</html>

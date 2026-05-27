@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Codes — Restaurant Tonnellerie</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', serif;
+      background: #f5f0e8;
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #3a2a10;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 40px;
+      letter-spacing: 0.1em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e0d5c0;
+      border-radius: 6px;
+      padding: 20px 16px;
+      text-align: center;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .table-label {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #bbb;
+      margin-bottom: 2px;
+    }
+    .table-num {
+      font-size: 36px;
+      color: #1a1208;
+      font-family: 'Georgia', serif;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+    .qr-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .qr-wrap canvas, .qr-wrap img {
+      border-radius: 4px;
+    }
+    .divider {
+      width: 30px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c9973a, transparent);
+      margin: 0 auto 10px;
+    }
+    .scan-text {
+      font-size: 10px;
+      color: #aaa;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    @media print {
+      body { background: white; padding: 20px; }
+      .no-print { display: none; }
+      .grid { gap: 16px; }
+    }
+    .btn-print {
+      display: block;
+      margin: 0 auto 32px;
+      padding: 12px 32px;
+      background: #c9973a;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: 'Georgia', serif;
+    }
+    .btn-print:hover { background: #b07830; }
+  </style>
+</head>
+<body>
+  <h1>Restaurant Tonnellerie</h1>
+  <p class="subtitle">QR Codes — À imprimer et coller sur les bouteilles</p>
+  <button class="btn-print no-print" onclick="window.print()">🖨️ Imprimer</button>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const BASE_URL = "https://tamanieux.github.io/Restaurant-Tonnellerie/table.html?table=";
+    const NUM_TABLES = 21;
+    const grid = document.getElementById("grid");
+
+    for (let i = 1; i <= NUM_TABLES; i++) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="table-label">Table</div>
+        <div class="table-num">${i}</div>
+        <div class="qr-wrap" id="qr-${i}"></div>
+        <div class="divider"></div>
+        <div class="scan-text">Scannez pour suivre votre commande</div>
+      `;
+      grid.appendChild(card);
+
+      new QRCode(document.getElementById(`qr-${i}`), {
+        text: BASE_URL + i,
+        width: 130,
+        height: 130,
+        colorDark: "#1a1208",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  </script>
+</body>
+</html>

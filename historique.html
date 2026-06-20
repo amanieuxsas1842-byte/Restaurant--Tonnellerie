@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historique — La Tonnellerie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #111009;
+      --surface: #1C1A12;
+      --surface2: #242118;
+      --border: rgba(201,151,58,0.15);
+      --gold: #C9973A;
+      --gold-light: #E8C06A;
+      --green: #2D6A4F;
+      --green-light: #52B788;
+      --red: #8B1A1A;
+      --red-light: #E05050;
+      --text: #EDE8DF;
+      --text-muted: #7A7060;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; }
+
+    /* LOGIN (réutilise le même mot de passe que l'admin) */
+    #login-screen { min-height: 100dvh; display: flex; align-items: center; justify-content: center; }
+    .login-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      padding: 48px 40px; width: min(380px, 92vw); text-align: center;
+    }
+    .login-brand { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--gold); letter-spacing: 0.08em; margin-bottom: 6px; }
+    .login-sub { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 36px; }
+    .login-input {
+      width: 100%; padding: 12px 16px; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 4px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 16px; letter-spacing: 0.1em;
+      text-align: center; margin-bottom: 16px; outline: none; transition: border-color 0.2s;
+    }
+    .login-input:focus { border-color: var(--gold); }
+    .login-btn {
+      width: 100%; padding: 12px; background: var(--gold); color: #1A1208;
+      border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: background 0.2s;
+    }
+    .login-btn:hover { background: var(--gold-light); }
+    .login-error { margin-top: 14px; font-size: 12px; color: var(--red-light); display: none; }
+
+    /* APP */
+    #app { display: none; }
+    header {
+      padding: 24px 32px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); flex-wrap: wrap; gap: 12px;
+    }
+    .header-left { display: flex; align-items: baseline; gap: 16px; }
+    .brand { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold); letter-spacing: 0.05em; }
+    .header-badge {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 2px;
+      padding: 4px 12px; font-size: 12px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .btn-link {
+      padding: 8px 20px; background: transparent; border: 1px solid var(--border); border-radius: 2px;
+      color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 12px;
+      letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+      text-decoration: none; display: inline-block;
+    }
+    .btn-link:hover { border-color: var(--gold); color: var(--gold); }
+
+    main { padding: 32px; max-width: 1000px; margin: 0 auto; }
+
+    .date-row {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .date-input {
+      padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
+    }
+    .date-input:focus { border-color: var(--gold); }
+    .date-label { font-size: 12px; color: var(--text-muted); letter-spacing: 0.05em; }
+    .btn-today {
+      padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--gold); font-size: 12px; letter-spacing: 0.05em; cursor: pointer; text-transform: uppercase;
+    }
+    .btn-today:hover { border-color: var(--gold); }
+
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 32px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      padding: 22px 20px;
+    }
+    .stat-card .label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+    .stat-card .value { font-family: 'Playfair Display', serif; font-size: 36px; color: var(--gold-light); line-height: 1; }
+    .stat-card .unit { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
+
+    .section-title {
+      font-family: 'Playfair Display', serif; font-size: 17px; color: var(--text);
+      margin-bottom: 14px; letter-spacing: 0.02em;
+    }
+
+    table.hist-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    table.hist-table th {
+      text-align: left; padding: 12px 16px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted); border-bottom: 1px solid var(--border); background: var(--surface2);
+    }
+    table.hist-table td {
+      padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text);
+    }
+    table.hist-table tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; letter-spacing: 0.05em;
+    }
+    .badge.ok { background: rgba(82,183,136,0.15); color: var(--green-light); }
+    .badge.pending { background: rgba(224,80,80,0.15); color: var(--red-light); }
+    .empty-state { padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+    @media (max-width: 640px) {
+      header { padding: 16px; }
+      main { padding: 20px 16px; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      table.hist-table { font-size: 12px; }
+      table.hist-table th, table.hist-table td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-brand">La Tonnellerie</div>
+      <div class="login-sub">Historique des commandes</div>
+      <input class="login-input" type="password" id="pwd-input" placeholder="Mot de passe" />
+      <button class="login-btn" onclick="checkPassword()">Entrer</button>
+      <div class="login-error" id="login-error">Mot de passe incorrect</div>
+    </div>
+  </div>
+
+  <div id="app">
+    <header>
+      <div class="header-left">
+        <span class="brand">La Tonnellerie</span>
+        <span class="header-badge">Historique</span>
+      </div>
+      <a class="btn-link" href="admin.html">← Retour à l'admin</a>
+    </header>
+    <main>
+      <div class="date-row">
+        <span class="date-label">Date :</span>
+        <input type="date" class="date-input" id="date-picker" />
+        <button class="btn-today" onclick="goToday()">Aujourd'hui</button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="label">Commandes du jour</div>
+          <div class="value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Temps moyen de préparation</div>
+          <div class="value" id="stat-avg-prep">—<span class="unit">min</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Temps moyen avant récupération</div>
+          <div class="value" id="stat-avg-pickup">—<span class="unit">min</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">En attente actuellement</div>
+          <div class="value" id="stat-pending">—</div>
+        </div>
+      </div>
+
+      <div class="section-title">Détail des commandes</div>
+      <div id="table-wrap">
+        <table class="hist-table" id="hist-table">
+          <thead>
+            <tr>
+              <th>Table</th>
+              <th>Scannée à</th>
+              <th>Prête à</th>
+              <th>Récupérée à</th>
+              <th>Préparation</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody id="hist-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://hbdgobcdfittdnifjodr.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_eJXG4Rd9ZVM5LUxQxMX1yA_QF_NjuEs";
+    const MOT_DE_PASSE = "TablesLatonnellerie";
+
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    document.getElementById("pwd-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") checkPassword();
+    });
+
+    function checkPassword() {
+      const val = document.getElementById("pwd-input").value;
+      if (val === MOT_DE_PASSE) {
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        init();
+      } else {
+        document.getElementById("login-error").style.display = "block";
+        document.getElementById("pwd-input").value = "";
+        document.getElementById("pwd-input").focus();
+      }
+    }
+
+    function todayStr() {
+      const d = new Date();
+      const tz = d.getTimezoneOffset() * 60000;
+      return new Date(d - tz).toISOString().slice(0, 10);
+    }
+
+    function init() {
+      const picker = document.getElementById("date-picker");
+      picker.value = todayStr();
+      picker.addEventListener("change", () => loadDay(picker.value));
+      loadDay(picker.value);
+    }
+
+    function goToday() {
+      const picker = document.getElementById("date-picker");
+      picker.value = todayStr();
+      loadDay(picker.value);
+    }
+
+    async function loadDay(dateStr) {
+      const start = new Date(dateStr + "T00:00:00").toISOString();
+      const end = new Date(dateStr + "T23:59:59.999").toISOString();
+
+      const { data, error } = await db
+        .from("historique")
+        .select("*")
+        .gte("scanned_at", start)
+        .lte("scanned_at", end)
+        .order("scanned_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        document.getElementById("hist-body").innerHTML = `<tr><td colspan="6" class="empty-state">Erreur de chargement — vérifiez que la table "historique" existe dans Supabase.</td></tr>`;
+        return;
+      }
+
+      renderStats(data || []);
+      renderTable(data || []);
+    }
+
+    function minutesBetween(a, b) {
+      if (!a || !b) return null;
+      return (new Date(b) - new Date(a)) / 60000;
+    }
+
+    function renderStats(rows) {
+      const total = rows.length;
+      const prepTimes = rows.map(r => minutesBetween(r.scanned_at, r.ready_at)).filter(v => v !== null);
+      const pickupTimes = rows.map(r => minutesBetween(r.ready_at, r.picked_up_at)).filter(v => v !== null);
+      const pending = rows.filter(r => !r.picked_up_at).length;
+
+      const avgPrep = prepTimes.length ? (prepTimes.reduce((a, b) => a + b, 0) / prepTimes.length) : null;
+      const avgPickup = pickupTimes.length ? (pickupTimes.reduce((a, b) => a + b, 0) / pickupTimes.length) : null;
+
+      document.getElementById("stat-total").textContent = total;
+      document.getElementById("stat-avg-prep").innerHTML = (avgPrep !== null ? avgPrep.toFixed(1) : "—") + '<span class="unit">min</span>';
+      document.getElementById("stat-avg-pickup").innerHTML = (avgPickup !== null ? avgPickup.toFixed(1) : "—") + '<span class="unit">min</span>';
+      document.getElementById("stat-pending").textContent = pending;
+    }
+
+    function fmtTime(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function renderTable(rows) {
+      const body = document.getElementById("hist-body");
+      if (!rows.length) {
+        body.innerHTML = `<tr><td colspan="6" class="empty-state">Aucune commande ce jour-là.</td></tr>`;
+        return;
+      }
+      body.innerHTML = rows.map(r => {
+        const prep = minutesBetween(r.scanned_at, r.ready_at);
+        const done = !!r.picked_up_at;
+        return `
+          <tr>
+            <td>${r.table_numero}</td>
+            <td>${fmtTime(r.scanned_at)}</td>
+            <td>${fmtTime(r.ready_at)}</td>
+            <td>${fmtTime(r.picked_up_at)}</td>
+            <td>${prep !== null ? prep.toFixed(1) + " min" : "—"}</td>
+            <td><span class="badge ${done ? 'ok' : 'pending'}">${done ? "Terminée" : "En cours"}</span></td>
+          </tr>
+        `;
+      }).join("");
+    }
+  </script>
+</body>
+</html>

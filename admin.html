@@ -168,6 +168,7 @@
             <div class="stat-value green" id="ready-count">0</div>
           </div>
         </div>
+        <a class="btn-reset" href="historique.html" style="text-decoration:none; display:inline-block;">Historique</a>
         <button class="btn-reset" onclick="resetAll()">Tout réinitialiser</button>
       </div>
     </header>
@@ -255,14 +256,34 @@
           <span class="dot ${t.status}"></span>
           <span class="status-text">${statusLabel}</span>
         </div>
-        <button class="btn-notify" id="btn-${t.id}" onclick="setStatus(${t.id}, '${nextStatus}')">
+        <button class="btn-notify" id="btn-${t.id}" onclick="setStatus(${t.id}, '${nextStatus}', '${t.status}')">
           ${btnLabel}
         </button>
       `;
     }
 
-    async function setStatus(id, newStatus) {
+    async function setStatus(id, newStatus, oldStatus) {
       await db.from("tables").update({ status: newStatus }).eq("id", id);
+      if (oldStatus === "ready" && newStatus === "waiting") {
+        const t = tablesData.find(x => x.id === id);
+        if (t) markHistoryPickedUp(t.numero);
+      }
+    }
+
+    async function markHistoryPickedUp(tableNumero) {
+      // Marque comme récupérée la dernière ligne d'historique ouverte pour cette table
+      const { data: rows } = await db
+        .from("historique")
+        .select("id")
+        .eq("table_numero", tableNumero)
+        .is("picked_up_at", null)
+        .order("scanned_at", { ascending: false })
+        .limit(1);
+      if (rows && rows[0]) {
+        await db.from("historique")
+          .update({ picked_up_at: new Date().toISOString() })
+          .eq("id", rows[0].id);
+      }
     }
 
     async function resetAll() {

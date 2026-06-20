@@ -28,6 +28,13 @@
 
       if (data && data.status === "waiting") {
         await db.from("tables").update({ status: "scanning" }).eq("numero", tableNum);
+        // Nouvelle ligne d'historique pour ce cycle de commande
+        const { data: histRow } = await db
+          .from("historique")
+          .insert({ table_numero: tableNum, scanned_at: new Date().toISOString() })
+          .select()
+          .single();
+        if (histRow) sessionStorage.setItem("hist_id_" + tableNum, histRow.id);
       }
 
       if (data) showStatus(data.status === "waiting" ? "scanning" : data.status);
@@ -40,8 +47,19 @@
           filter: `numero=eq.${tableNum}`
         }, (payload) => {
           showStatus(payload.new.status);
+          if (payload.new.status === "ready") {
+            markHistoryReady(tableNum);
+          }
         })
         .subscribe();
+    }
+
+    async function markHistoryReady(tableNum) {
+      const histId = sessionStorage.getItem("hist_id_" + tableNum);
+      if (!histId) return;
+      await db.from("historique")
+        .update({ ready_at: new Date().toISOString() })
+        .eq("id", histId);
     }
 
     function unlockAndWait() {

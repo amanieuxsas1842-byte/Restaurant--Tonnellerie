@@ -75,6 +75,12 @@
       letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
     }
     .btn-reset:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-clear-ready {
+      padding: 8px 20px; background: transparent; border: 1px solid rgba(82,183,136,0.3); border-radius: 2px;
+      color: var(--green-light); font-family: 'DM Sans', sans-serif; font-size: 12px;
+      letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-clear-ready:hover { border-color: var(--green-light); background: rgba(45,106,79,0.15); }
     main { padding: 32px; max-width: 1100px; margin: 0 auto; }
 
     /* LÉGENDE */
@@ -169,6 +175,7 @@
           </div>
         </div>
         <a class="btn-reset" href="historique.html" style="text-decoration:none; display:inline-block;">Historique</a>
+        <button class="btn-clear-ready" onclick="clearAllReady()">Tout récupérer</button>
         <button class="btn-reset" onclick="resetAll()">Tout réinitialiser</button>
       </div>
     </header>
@@ -288,6 +295,20 @@
 
     async function resetAll() {
       await db.from("tables").update({ status: "waiting" }).neq("id", 0);
+    }
+
+    async function clearAllReady() {
+      const readyTables = tablesData.filter(t => t.status === "ready");
+      if (readyTables.length === 0) {
+        alert("Aucune table prête à récupérer pour le moment.");
+        return;
+      }
+      const confirmed = confirm(`Marquer comme récupérées les ${readyTables.length} table(s) prête(s) (en vert) ?`);
+      if (!confirmed) return;
+
+      for (const t of readyTables) {
+        await setStatus(t.id, "waiting", "ready");
+      }
     }
 
     function updateCardUI(t) {

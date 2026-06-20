@@ -86,6 +86,13 @@
       color: var(--gold); font-size: 12px; letter-spacing: 0.05em; cursor: pointer; text-transform: uppercase;
     }
     .btn-today:hover { border-color: var(--gold); }
+    .btn-danger-group { margin-left: auto; display: flex; gap: 10px; }
+    .btn-danger {
+      padding: 10px 16px; background: var(--surface2); border: 1px solid rgba(224,80,80,0.3); border-radius: 4px;
+      color: var(--red-light); font-size: 12px; letter-spacing: 0.05em; cursor: pointer; text-transform: uppercase;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .btn-danger:hover { background: rgba(139,26,26,0.15); border-color: var(--red-light); }
 
     .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 32px; }
     .stat-card {
@@ -123,6 +130,8 @@
       .stats-row { grid-template-columns: 1fr 1fr; }
       table.hist-table { font-size: 12px; }
       table.hist-table th, table.hist-table td { padding: 8px 10px; }
+      .btn-danger-group { margin-left: 0; width: 100%; }
+      .btn-danger { flex: 1; }
     }
   </style>
 </head>
@@ -151,6 +160,10 @@
         <span class="date-label">Date :</span>
         <input type="date" class="date-input" id="date-picker" />
         <button class="btn-today" onclick="goToday()">Aujourd'hui</button>
+        <div class="btn-danger-group">
+          <button class="btn-danger" onclick="clearDay()">Vider cette journée</button>
+          <button class="btn-danger" onclick="clearAll()">Vider tout l'historique</button>
+        </div>
       </div>
 
       <div class="stats-row">
@@ -235,6 +248,42 @@
       loadDay(picker.value);
     }
 
+    async function clearDay() {
+      const dateStr = document.getElementById("date-picker").value;
+      const confirmed = confirm(`Supprimer définitivement toutes les commandes du ${dateStr} ?\n\nCette action est irréversible.`);
+      if (!confirmed) return;
+
+      const start = new Date(dateStr + "T00:00:00").toISOString();
+      const end = new Date(dateStr + "T23:59:59.999").toISOString();
+
+      const { error } = await db
+        .from("historique")
+        .delete()
+        .gte("scanned_at", start)
+        .lte("scanned_at", end);
+
+      if (error) {
+        alert("Erreur lors de la suppression : " + error.message);
+        return;
+      }
+      loadDay(dateStr);
+    }
+
+    async function clearAll() {
+      const confirmed = confirm("Supprimer DÉFINITIVEMENT tout l'historique, toutes dates confondues ?\n\nCette action est irréversible.");
+      if (!confirmed) return;
+      const doubleCheck = confirm("Dernière confirmation : voulez-vous vraiment tout effacer ?");
+      if (!doubleCheck) return;
+
+      const { error } = await db.from("historique").delete().gte("id", 0);
+
+      if (error) {
+        alert("Erreur lors de la suppression : " + error.message);
+        return;
+      }
+      loadDay(document.getElementById("date-picker").value);
+    }
+
     async function loadDay(dateStr) {
       const start = new Date(dateStr + "T00:00:00").toISOString();
       const end = new Date(dateStr + "T23:59:59.999").toISOString();
@@ -258,7 +307,9 @@
 
     function minutesBetween(a, b) {
       if (!a || !b) return null;
-      return (new Date(b) - new Date(a)) / 60000;
+      const diff = (new Date(b) - new Date(a)) / 60000;
+      if (diff < 0) return null; // données incohérentes (ex: récupérée sans être passée par "prête")
+      return diff;
     }
 
     function renderStats(rows) {

@@ -41,6 +41,11 @@
       text-align: center; margin-bottom: 16px; outline: none; transition: border-color 0.2s;
     }
     .login-input:focus { border-color: var(--gold); }
+    .remember-row {
+      display: flex; align-items: center; gap: 8px; justify-content: center;
+      margin-bottom: 20px; font-size: 12px; color: var(--text-muted); cursor: pointer; user-select: none;
+    }
+    .remember-row input { accent-color: var(--gold); width: 14px; height: 14px; cursor: pointer; }
     .login-btn {
       width: 100%; padding: 12px; background: var(--gold); color: #1A1208;
       border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif;
@@ -152,6 +157,10 @@
       <div class="login-brand">La Tonnellerie</div>
       <div class="login-sub">Accès cuisine</div>
       <input class="login-input" type="password" id="pwd-input" placeholder="Mot de passe" />
+      <label class="remember-row">
+        <input type="checkbox" id="remember-check" checked />
+        <span>Se souvenir de moi sur cet appareil</span>
+      </label>
       <button class="login-btn" onclick="checkPassword()">Entrer</button>
       <div class="login-error" id="login-error">Mot de passe incorrect</div>
     </div>
@@ -177,6 +186,7 @@
         <a class="btn-reset" href="historique.html" style="text-decoration:none; display:inline-block;">Historique</a>
         <button class="btn-clear-ready" onclick="clearAllReady()">Tout récupérer</button>
         <button class="btn-reset" onclick="resetAll()">Tout réinitialiser</button>
+        <button class="btn-reset" onclick="logout()" title="Oublier cet appareil">Déconnexion</button>
       </div>
     </header>
     <main>
@@ -193,6 +203,7 @@
     const SUPABASE_URL = "https://hbdgobcdfittdnifjodr.supabase.co";
     const SUPABASE_KEY = "sb_publishable_eJXG4Rd9ZVM5LUxQxMX1yA_QF_NjuEs";
     const MOT_DE_PASSE = "TablesLatonnellerie";
+    const REMEMBER_KEY = "tonnellerie_admin_remember";
 
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -205,6 +216,9 @@
     function checkPassword() {
       const val = document.getElementById("pwd-input").value;
       if (val === MOT_DE_PASSE) {
+        if (document.getElementById("remember-check").checked) {
+          localStorage.setItem(REMEMBER_KEY, "1");
+        }
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("app").style.display = "block";
         init();
@@ -213,6 +227,20 @@
         document.getElementById("pwd-input").value = "";
         document.getElementById("pwd-input").focus();
       }
+    }
+
+    function logout() {
+      localStorage.removeItem(REMEMBER_KEY);
+      document.getElementById("app").style.display = "none";
+      document.getElementById("login-screen").style.display = "flex";
+      document.getElementById("pwd-input").value = "";
+    }
+
+    // Si déjà mémorisé sur cet appareil, on saute directement l'écran de connexion
+    if (localStorage.getItem(REMEMBER_KEY) === "1") {
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      init();
     }
 
     async function init() {

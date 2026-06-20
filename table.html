@@ -68,7 +68,15 @@
       document.getElementById("waiting-confirmed").style.display = "flex";
     }
 
+    let lastStatus = null;
+
     function showStatus(status) {
+      if (lastStatus === "ready" && status === "waiting") {
+        window.location.href = "merci.html";
+        return;
+      }
+      lastStatus = status;
+
       const waiting = document.getElementById("state-waiting");
       const ready = document.getElementById("state-ready");
       const tableLabel = document.getElementById("table-label");

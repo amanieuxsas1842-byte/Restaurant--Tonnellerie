@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merci — La Tonnellerie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #FAF7F2;
+      --dark: #1A1208;
+      --gold: #C9973A;
+      --gold-light: #E8C06A;
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,151,58,0.12) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 50% 110%, rgba(201,151,58,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .card {
+      position: relative; z-index: 1; text-align: center;
+      padding: 40px 32px;
+      width: min(420px, 92vw);
+      border: 1px solid rgba(201,151,58,0.25); border-radius: 4px;
+      background: rgba(255,255,255,0.6); backdrop-filter: blur(8px);
+      box-shadow: 0 2px 40px rgba(26,18,8,0.07);
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.92); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .logo {
+      font-family: 'Playfair Display', serif; font-size: 13px;
+      letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase;
+    }
+    .divider { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 4px 0; }
+    .heart {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 10px rgba(201,151,58,0.12), 0 0 0 20px rgba(201,151,58,0.05);
+    }
+    .heart svg { width: 28px; height: 28px; fill: white; }
+    .title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--dark); }
+    .sub { font-size: 14px; color: #777; line-height: 1.6; max-width: 280px; }
+
+    .review-btn {
+      margin-top: 8px;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px;
+      background: var(--gold); color: #1A1208;
+      border: none; border-radius: 4px; text-decoration: none;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      box-shadow: 0 4px 16px rgba(201,151,58,0.3);
+      transition: background 0.2s;
+    }
+    .review-btn:hover { background: var(--gold-light); }
+    .review-btn svg { width: 16px; height: 16px; fill: #1A1208; }
+
+    .stars { display: flex; gap: 3px; margin-top: 2px; }
+    .stars svg { width: 18px; height: 18px; fill: var(--gold); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">La Tonnellerie</div>
+    <div class="divider"></div>
+    <div class="heart">
+      <svg viewBox="0 0 24 24"><path d="M12 21s-6.7-4.35-9.33-8.2C.6 9.92 1.4 6.6 4.1 5.1c2.2-1.2 4.7-.5 6.2 1.4C11.3 8 12 9 12 9s.7-1 1.7-2.5c1.5-1.9 4-2.6 6.2-1.4 2.7 1.5 3.5 4.82 1.43 7.7C18.7 16.65 12 21 12 21z"/></svg>
+    </div>
+    <div class="title">Merci pour votre visite !</div>
+    <p class="sub">Nous espérons que vous avez passé un agréable moment chez nous. À très bientôt !</p>
+
+    <div class="stars">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+    </div>
+
+    <a class="review-btn" href="https://search.google.com/local/writereview?placeid=ChIJQWZ1ODClqhIRMun6tRLrI5Y&source=g.page.m._&laa=merchant-review-solicitation" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      Laisser un avis Google
+    </a>
+  </div>
+</body>
+</html>
